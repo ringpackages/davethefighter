@@ -4,9 +4,29 @@
 */
 
 // Game state
-gameState       = ST_TITLE
+gameState       = ST_MENU
+quitGame        = false
 level           = 1
 maxLevel        = 20
+menuSelectedLevel = 1
+menuLastHover     = -1   // tracks last hovered menu item; -1 = none
+menuLastMouseX    = -1   // tracks last mouse X to detect movement
+menuLastMouseY    = -1   // tracks last mouse Y to detect movement
+menuPressX        = -1   // mouse X when left button was first pressed
+menuPressY        = -1   // mouse Y when left button was first pressed
+menuPressHover    = -1   // hovered item index at press time
+
+// Combined welcome + level-select screen layout (computed by
+// dave_computeMenuLayout; shared between dave_drawMenu and
+// dave_handleMenuInput so the drawn geometry and the hit-testing
+// geometry can never drift apart).
+dave_titleSz=0 dave_titleY=0
+dave_ctrlSz=0  dave_ctrlY1=0
+dave_selLblSz=0 dave_selLblY=0
+dave_cardW=0 dave_cardH=0 dave_gapX=0 dave_gapY=0
+dave_lvlSz=0
+dave_startX=0 dave_startY=0 dave_gridH=0
+dave_btnLblSz=0 dave_btnW=0 dave_btnH=0 dave_btnX=0 dave_btnY=0
 score           = 0
 lives           = 3
 hasKey          = false
@@ -91,58 +111,14 @@ sndHurt         = NULL
 sndGunPickup    = NULL
 bgMusic         = NULL
 
-// Title screen fireworks: [active, x, y, vx, vy, life, hue, size]
-FW_MAX = 300
-fwActive = list(FW_MAX)
-fwX = list(FW_MAX)
-fwY = list(FW_MAX)
-fwVX = list(FW_MAX)
-fwVY = list(FW_MAX)
-fwLife = list(FW_MAX)
-fwHue = list(FW_MAX)
-fwSize = list(FW_MAX)
-for _fwi = 1 to FW_MAX
-    fwActive[_fwi] = 0
-next
-fwTimer = 0.0
+// Gameplay background starfield (2D screen-space, drawn only in the void
+// beyond the level's on-screen edges/ceiling - see dave_drawBackgroundStars)
+GAME_STAR_MAX = 100
+gsInitialized = false
+gsX     = list(GAME_STAR_MAX)
+gsY     = list(GAME_STAR_MAX)
+gsPhase = list(GAME_STAR_MAX)
+gsSpeed = list(GAME_STAR_MAX)
+gsBright = list(GAME_STAR_MAX)
+gsSz    = list(GAME_STAR_MAX)
 
-// Title screen twinkling stars
-STAR_MAX = 80
-tsX = list(STAR_MAX)
-tsY = list(STAR_MAX)
-tsPhase = list(STAR_MAX)
-tsSpeed = list(STAR_MAX)
-tsBright = list(STAR_MAX)
-tsSz = list(STAR_MAX)
-for _si = 1 to STAR_MAX
-    tsX[_si] = GetRandomValue(5, 1195)
-    tsY[_si] = GetRandomValue(5, 695)
-    tsPhase[_si] = GetRandomValue(0, 628) / 100.0
-    tsSpeed[_si] = GetRandomValue(15, 45) / 10.0
-    tsBright[_si] = GetRandomValue(80, 255)
-    tsSz[_si] = GetRandomValue(10, 25) / 10.0
-next
-
-// Title screen shooting stars
-SS_MAX = 5
-ssActive = list(SS_MAX)
-ssX = list(SS_MAX)
-ssY = list(SS_MAX)
-ssVX = list(SS_MAX)
-ssVY = list(SS_MAX)
-ssLife = list(SS_MAX)
-ssLen = list(SS_MAX)
-ssHue = list(SS_MAX)
-for _ssi = 1 to SS_MAX
-    ssActive[_ssi] = 0
-next
-ssTimer = 0.0
-
-// Title screen Dave animation
-titleDaveX = -50.0
-titleDaveDir = 1
-titleDaveFrame = 0.0
-titleDaveJumpY = 0.0
-titleDaveJumpV = 0.0
-titleDaveOnGround = true
-titleDaveJumpTimer = 0.0

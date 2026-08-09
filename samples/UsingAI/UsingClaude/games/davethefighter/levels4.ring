@@ -826,7 +826,7 @@ func dave_buildLevel20
     // Zone 2 (cols 30-43): "Life is not fair..."
     // Zone 3 (cols 45-58): "You killed many NPCs..."
     // Zone 4 (cols 60-73): "You will stay in prison forever!"
-    // Zone 5 (cols 75-88): "Do you love Ring?"
+    // Zone 5 (cols 75-88): "Are you the Prince of Vibe Code?"
     // Zone 6 (cols 89-100): The golden YES
 
     // ===== THE GOLDEN "YES" =====

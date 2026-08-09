@@ -28,10 +28,7 @@ func dave_loadLevel lvl
     windZones = []
     tiles = []
 
-    // Gun persists from level 6 onward once collected
-    if lvl < 6
-        hasGun = false
-    ok
+    hasGun = false
 
     // Set level width (11-15 double, 16-20 ultra)
     if lvl >= 16

@@ -35,13 +35,16 @@ T_WIND_R        = 22
 T_CHECKPOINT    = 23
 
 // Game states
-ST_TITLE        = 0
 ST_PLAYING      = 1
 ST_PAUSED       = 2
 ST_DYING        = 3
 ST_LEVELUP      = 4
 ST_GAMEOVER     = 5
 ST_WON          = 6
+ST_MENU         = 7
+
+// Virtual menu index representing the Close button (beyond maxLevel)
+CLOSE_BTN       = 21
 
 // Camera modes
 CAM_SIDE        = 0

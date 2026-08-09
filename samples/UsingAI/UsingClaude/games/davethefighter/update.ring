@@ -164,7 +164,7 @@ func dave_update dt
             tiles[cr][cc] = dave_bgTile(cr, cc)
             hasGun = true
             dave_spawnPickupParticles(px, py + 0.5, 255, 150, 0)
-            add(popups, [px, py + 1.0, "GUN! [F]", 2.0])
+            add(popups, [px, py + 1.0, "GUN! [F/Space]", 2.0])
             PlaySound(sndGunPickup)
         ok
         if t = T_DOOR
@@ -281,7 +281,7 @@ func dave_update dt
             tiles[cr2][cc] = dave_bgTile(cr2, cc)
             hasGun = true
             dave_spawnPickupParticles(px, py + 0.5, 255, 150, 0)
-            add(popups, [px, py + 1.0, "GUN! [F]", 2.0])
+            add(popups, [px, py + 1.0, "GUN! [F/Space]", 2.0])
             PlaySound(sndGunPickup)
         ok
     ok
@@ -789,9 +789,9 @@ func dave_checkCheckpoint
     ok
 
 // Determine background tile when a collectible is picked up
-// Checks neighbors - if surrounded by wind tiles, return wind type
+// Only checks same-row neighbors (left/right) - wind zones are horizontal,
+// so tiles above/below should never bleed their type into the pickup cell.
 func dave_bgTile r, c
-    // Check left, right, above, below for wind tiles
     if c > 1
         nt = tiles[r][c-1]
         if nt = T_WIND_L return T_WIND_L ok
@@ -799,16 +799,6 @@ func dave_bgTile r, c
     ok
     if c < curLvlW
         nt = tiles[r][c+1]
-        if nt = T_WIND_L return T_WIND_L ok
-        if nt = T_WIND_R return T_WIND_R ok
-    ok
-    if r > 1
-        nt = tiles[r-1][c]
-        if nt = T_WIND_L return T_WIND_L ok
-        if nt = T_WIND_R return T_WIND_R ok
-    ok
-    if r < LVL_H
-        nt = tiles[r+1][c]
         if nt = T_WIND_L return T_WIND_L ok
         if nt = T_WIND_R return T_WIND_R ok
     ok

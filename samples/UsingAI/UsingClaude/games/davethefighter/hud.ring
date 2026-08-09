@@ -4,6 +4,12 @@
 */
 
 func dave_drawHUD
+    // Skip all HUD drawing when showing the level-select menu
+    if gameState = ST_MENU
+        dave_drawMenu()
+        return
+    ok
+
     // Top bar background
     DrawRectangle(0, 0, SCREEN_W, 44, RAYLIBColor(0, 0, 0, 180))
 
@@ -12,7 +18,7 @@ func dave_drawHUD
              RAYLIBColor(255, 255, 255, 255))
 
     // Level number with game name
-    lvlText = "Dave The Fighter (Level " + string(level) + ")"
+    lvlText = "Dave the Fighter (Level " + string(level) + ")"
     DrawText(lvlText, floor(SCREEN_W / 2 - MeasureText(lvlText, 22) / 2), 10, 22,
              RAYLIBColor(255, 220, 50, 255))
 
@@ -64,17 +70,6 @@ func dave_drawHUD
     DrawText(progText, 15, SCREEN_H - 30, 18,
              RAYLIBColor(100, 200, 255, 200))
 
-    // Controls
-    if hasGun
-        DrawText("Arrows/WASD: Move | Space: Jump | F: Shoot | P: Pause | R: Restart",
-                 floor(SCREEN_W / 2 - 280), SCREEN_H - 30, 14,
-                 RAYLIBColor(140, 140, 140, 150))
-    else
-        DrawText("Arrows/WASD: Move | Space: Jump | P: Pause | R: Restart",
-                 floor(SCREEN_W / 2 - 240), SCREEN_H - 30, 14,
-                 RAYLIBColor(140, 140, 140, 150))
-    ok
-
     // Popups (2D overlay text)
     nPopups = len(popups)
     for i = 1 to nPopups
@@ -82,62 +77,6 @@ func dave_drawHUD
     next
 
     // State overlays
-    if gameState = ST_TITLE
-        dt2 = GetFrameTime()
-        if dt2 > 0.05 dt2 = 0.05 ok
-
-        // Dark gray background
-        DrawRectangle(0, 0, SCREEN_W, SCREEN_H, RAYLIBColor(30, 30, 30, 255))
-
-        // Twinkling stars (background layer)
-        dave_drawTwinkleStars()
-
-        // Shooting stars
-        dave_updateShootingStars(dt2)
-        dave_drawShootingStars()
-
-        // Fireworks
-        dave_updateFireworks(dt2)
-        dave_drawFireworks()
-
-        // Rainbow title - draw each letter with shifting hue
-        title = "DAVE THE FIGHTER"
-        tW = MeasureText(title, 52)
-        titleX = floor(SCREEN_W / 2 - tW / 2)
-        titleY = floor(SCREEN_H / 2 - 80)
-        dave_drawRainbowTitle(title, titleX, titleY, 52)
-
-        // Subtitle
-        sub = "3D Action Platformer"
-        subPulse = floor(sin(animTime * 1.5) * 30 + 225)
-        DrawText(sub, floor(SCREEN_W / 2 - MeasureText(sub, 24) / 2),
-                 floor(SCREEN_H / 2 - 15), 24, RAYLIBColor(255, 200, 100, subPulse))
-
-        // Start prompt (pulsing)
-        start = "Press ENTER or SPACE to Start"
-        pulse = floor(sin(animTime * 3.0) * 60 + 195)
-        DrawText(start, floor(SCREEN_W / 2 - MeasureText(start, 24) / 2),
-                 floor(SCREEN_H / 2 + 40), 24, RAYLIBColor(255, 255, 255, pulse))
-
-        // Instructions
-        inst = "20 levels across 4 worlds!"
-        DrawText(inst, floor(SCREEN_W / 2 - MeasureText(inst, 18) / 2),
-                 floor(SCREEN_H / 2 + 90), 18, RAYLIBColor(180, 180, 180, 200))
-
-        inst2 = "Collect gems, defeat enemies, find the key!"
-        DrawText(inst2, floor(SCREEN_W / 2 - MeasureText(inst2, 18) / 2),
-                 floor(SCREEN_H / 2 + 115), 18, RAYLIBColor(180, 180, 180, 200))
-
-        // Controls
-        ctrl = "Arrows/WASD: Move  |  Space: Jump  |  F: Shoot"
-        DrawText(ctrl, floor(SCREEN_W / 2 - MeasureText(ctrl, 14) / 2),
-                 floor(SCREEN_H / 2 + 155), 14, RAYLIBColor(120, 120, 120, 180))
-
-        // Animated Dave running at bottom
-        dave_updateTitleDave(dt2)
-        dave_drawTitleDave()
-    ok
-
     if gameState = ST_PAUSED
         DrawRectangle(0, 0, SCREEN_W, SCREEN_H, RAYLIBColor(0, 0, 0, 160))
         pTxt = "PAUSED"
@@ -240,7 +179,7 @@ func dave_drawLevel20Messages
     // Message 5: cols 75-88
     if px >= 75 and px < 89
         msg = "There is only one way out of this world..."
-        msg2 = "Do you love the Ring programming language?"
+        msg2 = "Are you the Prince of Vibe Code?"
         msgColor = RAYLIBColor(100, 200, 255, 255)
         showMsg = true
     ok
@@ -248,7 +187,7 @@ func dave_drawLevel20Messages
     // Message 6: cols 89-100 - The answer
     if px >= 89 and px < 101
         if !hasKey
-            msg = "Touch the golden Ring to answer Yes!"
+            msg = "Claim your Ring to say Yes!"
             msgColor = RAYLIBColor(255, 220, 50, 255)
             showMsg = true
         else
@@ -288,340 +227,202 @@ func dave_drawLevel20Messages
     ok
 
 // =============================================================
-// Title Screen Fireworks (adapted from Color Screensaver)
+// Gameplay Background Stars (void outside the level walls/ceiling)
 // =============================================================
 
-func dave_updateFireworks dt
-    if dt > 0.05 dt = 0.05 ok
+func dave_initGameStars
+    if gsInitialized return ok
+    for i = 1 to GAME_STAR_MAX
+        gsX[i] = GetRandomValue(0, SCREEN_W)
+        gsY[i] = GetRandomValue(0, SCREEN_H)
+        gsPhase[i] = GetRandomValue(0, 628) / 100.0
+        gsSpeed[i] = GetRandomValue(15, 45) / 10.0
+        gsBright[i] = GetRandomValue(120, 255)
+        gsSz[i] = GetRandomValue(10, 22) / 10.0
+    next
+    gsInitialized = true
 
-    // Spawn new firework burst periodically
-    fwTimer += dt
-    if fwTimer > 0.4
-        fwTimer = 0.0
-        dave_spawnFirework()
-    ok
+func dave_drawBackgroundStars
+    dave_initGameStars()
 
-    // Update active particles
-    for i = 1 to FW_MAX
-        if fwActive[i] = 0 loop ok
-        fwX[i] += fwVX[i] * dt
-        fwY[i] += fwVY[i] * dt
-        fwVY[i] += 120 * dt    // gravity
-        fwVX[i] *= 0.99
-        fwVY[i] *= 0.99
-        fwLife[i] -= dt
-        if fwLife[i] <= 0
-            fwActive[i] = 0
+    // Project the opaque level background wall to screen space so stars are
+    // only drawn where the wall does NOT cover - i.e. the true void beyond
+    // the level's edges/ceiling.
+    wz = -0.9
+    p1 = GetWorldToScreen(Vector3(-1.0, -1.0, wz), cam)
+    p2 = GetWorldToScreen(Vector3(-1.0, LVL_H + 1.0, wz), cam)
+    p3 = GetWorldToScreen(Vector3(curLvlW + 1.0, -1.0, wz), cam)
+    p4 = GetWorldToScreen(Vector3(curLvlW + 1.0, LVL_H + 1.0, wz), cam)
+
+    wallMinX = p1.x  wallMaxX = p1.x
+    wallMinY = p1.y  wallMaxY = p1.y
+    for pt in [p2, p3, p4]
+        if pt.x < wallMinX wallMinX = pt.x ok
+        if pt.x > wallMaxX wallMaxX = pt.x ok
+        if pt.y < wallMinY wallMinY = pt.y ok
+        if pt.y > wallMaxY wallMaxY = pt.y ok
+    next
+
+    for i = 1 to GAME_STAR_MAX
+        sx = gsX[i]
+        sy = gsY[i]
+        // Skip stars that fall over the opaque level area
+        if sx > wallMinX and sx < wallMaxX and sy > wallMinY and sy < wallMaxY
+            loop
         ok
-    next
 
-func dave_spawnFirework
-    // Random burst position
-    cx = GetRandomValue(150, SCREEN_W - 150)
-    cy = GetRandomValue(100, SCREEN_H - 200)
-    hue = GetRandomValue(0, 360)
-    count = GetRandomValue(30, 50)
-
-    for p = 1 to count
-        slot = 0
-        for i = 1 to FW_MAX
-            if fwActive[i] = 0
-                slot = i
-                exit
-            ok
-        next
-        if slot = 0 exit ok
-
-        angle = GetRandomValue(0, 628) / 100.0
-        speed = GetRandomValue(80, 280) * 1.0
-        fwActive[slot] = 1
-        fwX[slot] = cx * 1.0
-        fwY[slot] = cy * 1.0
-        fwVX[slot] = cos(angle) * speed
-        fwVY[slot] = sin(angle) * speed
-        fwLife[slot] = GetRandomValue(10, 25) / 10.0
-        fwHue[slot] = hue + GetRandomValue(-30, 30)
-        if fwHue[slot] < 0 fwHue[slot] += 360 ok
-        if fwHue[slot] > 360 fwHue[slot] -= 360 ok
-        fwSize[slot] = GetRandomValue(15, 40) / 10.0
-    next
-
-func dave_drawFireworks
-    for i = 1 to FW_MAX
-        if fwActive[i] = 0 loop ok
-
-        lifeRatio = fwLife[i] / 2.5
-        if lifeRatio > 1.0 lifeRatio = 1.0 ok
-        alpha = floor(lifeRatio * 255)
+        bright = sin(animTime * gsSpeed[i] + gsPhase[i])
+        alpha = floor((bright + 1.0) * 0.5 * gsBright[i])
         if alpha > 255 alpha = 255 ok
-        if alpha < 0 loop ok
+        if alpha < 15 alpha = 15 ok
 
-        rgb = dave_fwColor(fwHue[i])
-        fr = rgb[1]  fg = rgb[2]  fb = rgb[3]
-
-        sz = fwSize[i] * lifeRatio
-        if sz < 0.3 sz = 0.3 ok
-
-        // Outer glow
-        DrawCircle(floor(fwX[i]), floor(fwY[i]), floor(sz * 3),
-                   RAYLIBColor(fr, fg, fb, floor(alpha * 0.15)))
-        // Core
-        DrawCircle(floor(fwX[i]), floor(fwY[i]), floor(sz),
-                   RAYLIBColor(fr, fg, fb, alpha))
-        // Bright center spark
-        if sz > 1.5
-            DrawCircle(floor(fwX[i]), floor(fwY[i]), floor(sz * 0.4),
-                       RAYLIBColor(255, 255, 255, floor(alpha * 0.5)))
-        ok
-    next
-
-func dave_fwColor hue
-    // Convert hue (0-360) to RGB rainbow
-    h = (hue % 360) / 60.0
-    sector = floor(h)
-    f = h - sector
-    q = floor(255 * (1.0 - f))
-    t = floor(255 * f)
-
-    if sector = 0 return [255, t, 0] ok
-    if sector = 1 return [q, 255, 0] ok
-    if sector = 2 return [0, 255, t] ok
-    if sector = 3 return [0, q, 255] ok
-    if sector = 4 return [t, 0, 255] ok
-    return [255, 0, q]
-
-// =============================================================
-// Twinkling Stars
-// =============================================================
-
-func dave_drawTwinkleStars
-    for i = 1 to STAR_MAX
-        // Twinkle using sin wave
-        bright = sin(animTime * tsSpeed[i] + tsPhase[i])
-        alpha = floor((bright + 1.0) * 0.5 * tsBright[i])
-        if alpha > 255 alpha = 255 ok
-        if alpha < 10 alpha = 10 ok
-
-        sz = tsSz[i]
-
-        // Outer glow
-        DrawCircle(floor(tsX[i]), floor(tsY[i]), floor(sz * 2.5),
-                   RAYLIBColor(200, 220, 255, floor(alpha * 0.15)))
-        // Core
-        DrawCircle(floor(tsX[i]), floor(tsY[i]), floor(sz),
-                   RAYLIBColor(220, 230, 255, alpha))
-        // Bright center on peak brightness
+        sz = gsSz[i]
+        DrawCircle(floor(sx), floor(sy), floor(sz * 2.5),
+                   RAYLIBColor(180, 205, 255, floor(alpha * 0.2)))
+        DrawCircle(floor(sx), floor(sy), floor(sz),
+                   RAYLIBColor(220, 235, 255, alpha))
         if bright > 0.7
-            DrawCircle(floor(tsX[i]), floor(tsY[i]), floor(sz * 0.4),
+            DrawCircle(floor(sx), floor(sy), floor(sz * 0.4),
                        RAYLIBColor(255, 255, 255, floor(alpha * 0.8)))
         ok
     next
 
 // =============================================================
-// Shooting Stars
+// Combined Welcome + Level-Select Screen
 // =============================================================
 
-func dave_updateShootingStars dt
-    ssTimer += dt
-    if ssTimer > 1.5
-        ssTimer = 0.0
-        dave_spawnShootingStar()
-    ok
+# Decorative gradient border frame around the welcome screen, in the style of
+# povc.ring's notification borders (drawFancyBorder) but drawn with plain
+# raylib primitives instead of the border PNG.
+func drawScreenBorder gradCol1, gradCol2, outerCol, innerCol
+    inset = 14   thick = 5
+    DrawRectangleGradientH(inset, inset, SCREEN_W-inset*2, thick, gradCol1, gradCol2)
+    DrawRectangleGradientH(inset, SCREEN_H-inset-thick, SCREEN_W-inset*2, thick, gradCol2, gradCol1)
+    DrawRectangleGradientV(inset, inset, thick, SCREEN_H-inset*2, gradCol1, gradCol2)
+    DrawRectangleGradientV(SCREEN_W-inset-thick, inset, thick, SCREEN_H-inset*2, gradCol1, gradCol2)
+    DrawRectangleLines(inset-3, inset-3, SCREEN_W-(inset-3)*2, SCREEN_H-(inset-3)*2, outerCol)
+    DrawRectangleLines(inset+thick+4, inset+thick+4, SCREEN_W-(inset+thick+4)*2, SCREEN_H-(inset+thick+4)*2, innerCol)
 
-    for i = 1 to SS_MAX
-        if ssActive[i] = 0 loop ok
-        ssX[i] += ssVX[i] * dt
-        ssY[i] += ssVY[i] * dt
-        ssLife[i] -= dt
-        if ssLife[i] <= 0
-            ssActive[i] = 0
+# Shared layout math for the combined welcome/level-select screen, used by
+# both dave_drawMenu (drawing) and dave_handleMenuInput (mouse hit-testing)
+# so they can never drift apart. Fonts scale with the monitor's actual
+# resolution (baseline = 700px tall), and the whole block -- title, subtitle,
+# guidelines, level grid, close button -- is vertically centered based on its
+# real computed content height.
+func dave_computeMenuLayout
+    mY = SCREEN_H / 700.0
+
+    dave_titleSz = max(34, floor(64*mY))
+    dave_ctrlSz  = max(12, floor(16*mY))
+    dave_selLblSz= max(15, floor(22*mY))
+
+    dave_lvlSz   = max(18, floor(28*mY))
+    dave_btnLblSz = max(15, floor(22*mY))
+    dave_btnW = max(floor(100*mY), MeasureText("CLOSE GAME", dave_btnLblSz) + 30)
+    dave_btnH = floor(50*mY)
+
+    dave_cardW = max(floor(90*mY), MeasureText(string(maxLevel - 1), dave_lvlSz) + 30)
+    dave_cardH = dave_btnH        // same height as the Close button
+    dave_gapX  = floor(20*mY)
+    dave_gapY  = floor(16*mY)
+
+    gap1 = floor(14*mY)   // title -> controls
+    gap3 = floor(16*mY)   // controls -> "SELECT LEVEL" label
+    gap4 = floor(10*mY)   // label -> grid
+    gap5 = floor(14*mY)   // grid -> close button
+
+    titleBlockH = dave_titleSz + floor(10*mY)
+    ctrlBlockH  = dave_ctrlSz   // 1 line
+    selLblBlockH = dave_selLblSz
+    dave_gridH = 4 * dave_cardH + 3 * dave_gapY
+    btnBlockH  = dave_btnH
+
+    contentH = titleBlockH+gap1+ctrlBlockH+gap3+selLblBlockH+gap4+dave_gridH+gap5+btnBlockH
+
+    topY = floor((SCREEN_H - contentH) / 2)
+    if topY < floor(14*mY)  topY = floor(14*mY)  ok
+
+    dave_titleY  = topY
+    dave_ctrlY1  = dave_titleY + titleBlockH + gap1
+    dave_selLblY = dave_ctrlY1 + ctrlBlockH + gap3
+    dave_startY  = dave_selLblY + selLblBlockH + gap4
+    dave_btnY    = dave_startY + dave_gridH + gap5
+
+    totalGridW = 5 * dave_cardW + 4 * dave_gapX
+    dave_startX = floor((SCREEN_W - totalGridW) / 2)
+    dave_btnX   = floor((SCREEN_W - dave_btnW) / 2)
+
+func dave_drawMenu
+    dave_computeMenuLayout()
+
+    // Menu background image
+    DrawTexturePro(dave_menuBackTex,
+        Rectangle(0.0, 0.0, dave_menuBackTex.width*1.0, dave_menuBackTex.height*1.0),
+        Rectangle(0.0, 0.0, SCREEN_W*1.0, SCREEN_H*1.0),
+        Vector2(0.0, 0.0), 0.0, WHITE)
+
+    // Title (with a gentle wobble/bounce, drop-shadow copy underneath)
+    wob = floor(sin(animTime * 2.0) * 8)
+    title = "Dave the Fighter"
+    tW = MeasureText(title, dave_titleSz)
+    tX = floor((SCREEN_W - tW) / 2)
+    DrawText(title, tX + 3, dave_titleY + 3 + wob, dave_titleSz, RAYLIBColor(0, 20, 10, 200))
+    DrawText(title, tX, dave_titleY + wob, dave_titleSz, WHITE)
+
+    ctrl1 = "Arrows/WASD: Move  |  W/Up: Jump  |  F/Space: Shoot (Gun Required)"
+    DrawText(ctrl1, floor(SCREEN_W/2 - MeasureText(ctrl1, dave_ctrlSz)/2), dave_ctrlY1,
+             dave_ctrlSz, RAYLIBColor(180, 220, 180, 200))
+
+    selLbl = "SELECT LEVEL"
+    DrawText(selLbl, floor(SCREEN_W/2 - MeasureText(selLbl, dave_selLblSz)/2), dave_selLblY,
+             dave_selLblSz, RAYLIBColor(180, 220, 180, 200))
+
+    cols = 5
+    cardW = dave_cardW  cardH = dave_cardH
+    gapX  = dave_gapX   gapY  = dave_gapY
+    startX = dave_startX  startY = dave_startY
+
+    for i = 1 to maxLevel - 1
+        row   = floor((i - 1) / cols)
+        col   = (i - 1) % cols
+        cx    = startX + col * (cardW + gapX)
+        cy    = startY + row * (cardH + gapY)
+
+        isActive   = (i = menuSelectedLevel)
+
+        // Card: navy bg + light-blue text normally; light-blue bg + navy text when highlighted
+        if isActive
+            DrawRectangleGradientV(cx, cy, cardW, cardH, RAYLIBColor(210, 235, 248, 255), RAYLIBColor(140, 190, 218, 255))
+            DrawRectangleLines(cx, cy, cardW, cardH, RAYLIBColor(0, 0, 80, 255))
+            cardTextCol = RAYLIBColor(0, 0, 80, 255)
+        else
+            DrawRectangleGradientV(cx, cy, cardW, cardH, RAYLIBColor(25, 35, 45, 255), RAYLIBColor(12, 18, 25, 255))
+            DrawRectangleLines(cx, cy, cardW, cardH, RAYLIBColor(173, 216, 230, 255))
+            cardTextCol = RAYLIBColor(173, 216, 230, 255)
         ok
+
+        // Level number
+        lvlStr = string(i)
+        lW     = MeasureText(lvlStr, dave_lvlSz)
+        DrawText(lvlStr, cx + floor((cardW - lW) / 2), cy + floor((cardH - dave_lvlSz) / 2), dave_lvlSz, cardTextCol)
     next
 
-func dave_spawnShootingStar
-    slot = 0
-    for i = 1 to SS_MAX
-        if ssActive[i] = 0
-            slot = i
-            exit
-        ok
-    next
-    if slot = 0 return ok
+    // Close button
+    btnW = dave_btnW  btnH = dave_btnH
+    btnX = dave_btnX  btnY = dave_btnY
 
-    ssActive[slot] = 1
-    // Start from random position along top or left edge
-    if GetRandomValue(0, 1) = 0
-        ssX[slot] = GetRandomValue(100, SCREEN_W) * 1.0
-        ssY[slot] = -5.0
+    btnActive = (menuSelectedLevel = CLOSE_BTN)
+    if btnActive
+        DrawRectangleGradientV(btnX, btnY, btnW, btnH, RAYLIBColor(210, 235, 248, 255), RAYLIBColor(140, 190, 218, 255))
+        DrawRectangleLines(btnX, btnY, btnW, btnH, RAYLIBColor(0, 0, 80, 255))
+        btnTextCol = RAYLIBColor(0, 0, 80, 255)
     else
-        ssX[slot] = -5.0
-        ssY[slot] = GetRandomValue(50, 300) * 1.0
+        DrawRectangleGradientV(btnX, btnY, btnW, btnH, RAYLIBColor(25, 35, 45, 255), RAYLIBColor(12, 18, 25, 255))
+        DrawRectangleLines(btnX, btnY, btnW, btnH, RAYLIBColor(173, 216, 230, 255))
+        btnTextCol = RAYLIBColor(173, 216, 230, 255)
     ok
-    speed = GetRandomValue(400, 800) * 1.0
-    angle = GetRandomValue(20, 50) / 100.0 + 0.5   // roughly 30-60 degrees
-    ssVX[slot] = cos(angle) * speed
-    ssVY[slot] = sin(angle) * speed
-    ssLife[slot] = GetRandomValue(8, 15) / 10.0
-    ssLen[slot] = GetRandomValue(40, 100) * 1.0
-    ssHue[slot] = GetRandomValue(0, 360)
+    closeStr = "CLOSE GAME"
+    DrawText(closeStr, btnX + floor((btnW - MeasureText(closeStr, dave_btnLblSz)) / 2),
+             btnY + floor((btnH - dave_btnLblSz) / 2), dave_btnLblSz, btnTextCol)
 
-func dave_drawShootingStars
-    for i = 1 to SS_MAX
-        if ssActive[i] = 0 loop ok
-
-        lifeRatio = ssLife[i] / 1.5
-        if lifeRatio > 1.0 lifeRatio = 1.0 ok
-        alpha = floor(lifeRatio * 255)
-        if alpha > 255 alpha = 255 ok
-
-        rgb = dave_fwColor(ssHue[i])
-        fr = rgb[1]  fg = rgb[2]  fb = rgb[3]
-
-        // Tail direction (opposite of velocity)
-        speed = sqrt(ssVX[i] * ssVX[i] + ssVY[i] * ssVY[i])
-        if speed < 1 speed = 1 ok
-        dx = -ssVX[i] / speed
-        dy = -ssVY[i] / speed
-
-        // Draw trail segments
-        nSegs = 8
-        for s = 0 to nSegs
-            segRatio = s * 1.0 / nSegs
-            sx = floor(ssX[i] + dx * ssLen[i] * segRatio)
-            sy = floor(ssY[i] + dy * ssLen[i] * segRatio)
-            segAlpha = floor(alpha * (1.0 - segRatio))
-            segSz = floor(3.0 * (1.0 - segRatio * 0.7))
-            if segSz < 1 segSz = 1 ok
-            DrawCircle(sx, sy, segSz,
-                       RAYLIBColor(fr, fg, fb, segAlpha))
-        next
-
-        // Bright head
-        DrawCircle(floor(ssX[i]), floor(ssY[i]), 4,
-                   RAYLIBColor(255, 255, 255, alpha))
-        DrawCircle(floor(ssX[i]), floor(ssY[i]), 7,
-                   RAYLIBColor(fr, fg, fb, floor(alpha * 0.4)))
-    next
-
-// =============================================================
-// Rainbow Title Text
-// =============================================================
-
-func dave_drawRainbowTitle title, startX, startY, fontSize
-    // First pass: calculate total width from individual characters
-    nChars = len(title)
-    totalW = 0
-    for i = 1 to nChars
-        ch = substr(title, i, 1)
-        totalW += MeasureText(ch, fontSize)
-    next
-
-    // Center based on actual total width
-    charX = floor(SCREEN_W / 2 - totalW / 2)
-
-    // Second pass: draw each character
-    for i = 1 to nChars
-        ch = substr(title, i, 1)
-        chW = MeasureText(ch, fontSize)
-
-        // Hue shifts per character and over time
-        hue = ((i - 1) * 22 + floor(animTime * 80)) % 360
-        rgb = dave_fwColor(hue)
-
-        // Wave bob - each letter bobs up/down slightly
-        bob = sin(animTime * 3.0 + (i - 1) * 0.4) * 4.0
-        cy = startY + floor(bob)
-
-        // Glow behind letter
-        glowAlpha = floor(sin(animTime * 2.0 + i * 0.3) * 30 + 50)
-        DrawText(ch, charX + 2, cy + 2, fontSize,
-                 RAYLIBColor(rgb[1], rgb[2], rgb[3], glowAlpha))
-
-        // Main letter
-        DrawText(ch, charX, cy, fontSize,
-                 RAYLIBColor(rgb[1], rgb[2], rgb[3], 255))
-
-        charX += chW
-    next
-
-// =============================================================
-// Title Screen Dave - Running and Jumping Silhouette
-// =============================================================
-
-func dave_updateTitleDave dt
-    groundY = SCREEN_H - 60
-
-    // Move Dave across screen
-    speed = 120.0
-    titleDaveX += speed * titleDaveDir * dt
-    titleDaveFrame += dt * 8.0
-
-    // Random jump
-    titleDaveJumpTimer += dt
-    if titleDaveOnGround and titleDaveJumpTimer > 2.0
-        titleDaveJumpV = -350.0
-        titleDaveOnGround = false
-        titleDaveJumpTimer = 0.0
-    ok
-
-    // Gravity
-    if !titleDaveOnGround
-        titleDaveJumpY += titleDaveJumpV * dt
-        titleDaveJumpV += 800.0 * dt
-        if titleDaveJumpY >= 0
-            titleDaveJumpY = 0
-            titleDaveOnGround = true
-            titleDaveJumpV = 0
-        ok
-    ok
-
-    // Wrap around edges
-    if titleDaveX > SCREEN_W + 50
-        titleDaveX = -50.0
-    ok
-    if titleDaveX < -50
-        titleDaveX = SCREEN_W + 50.0
-    ok
-
-func dave_drawTitleDave
-    groundY = SCREEN_H - 60
-    dx = floor(titleDaveX)
-    dy = floor(groundY + titleDaveJumpY)
-
-    // Ground line
-    DrawRectangle(0, SCREEN_H - 35, SCREEN_W, 2, RAYLIBColor(60, 60, 60, 100))
-
-    // Legs animation
-    legSwing = sin(titleDaveFrame) * 6
-    if !titleDaveOnGround legSwing = -4 ok
-
-    // Left leg
-    DrawRectangle(dx - 5, dy + 12, 4, 12 + floor(legSwing),
-                  RAYLIBColor(50, 50, 180, 255))
-    // Right leg
-    DrawRectangle(dx + 2, dy + 12, 4, 12 - floor(legSwing),
-                  RAYLIBColor(50, 50, 180, 255))
-
-    // Body
-    DrawRectangle(dx - 6, dy, 13, 14, RAYLIBColor(220, 40, 40, 255))
-
-    // Arms swinging
-    armSwing = sin(titleDaveFrame + 1.57) * 5
-    DrawRectangle(dx - 10, dy + 2 + floor(armSwing), 5, 4,
-                  RAYLIBColor(255, 200, 150, 255))
-    DrawRectangle(dx + 7, dy + 2 - floor(armSwing), 5, 4,
-                  RAYLIBColor(255, 200, 150, 255))
-
-    // Head
-    DrawCircle(dx + 1, dy - 5, 8, RAYLIBColor(255, 200, 150, 255))
-
-    // Hat (red cap)
-    DrawRectangle(dx - 9, dy - 14, 20, 5, RAYLIBColor(220, 40, 40, 255))
-    DrawRectangle(dx - 6, dy - 10, 14, 3, RAYLIBColor(220, 40, 40, 255))
-
-    // Eyes
-    DrawCircle(dx - 2, dy - 5, 1, RAYLIBColor(40, 40, 80, 255))
-    DrawCircle(dx + 4, dy - 5, 1, RAYLIBColor(40, 40, 80, 255))
-
-    // Smile
-    DrawRectangle(dx - 1, dy - 1, 4, 1, RAYLIBColor(180, 80, 80, 255))
+    drawScreenBorder(RAYLIBColor(8,60,30,235), RAYLIBColor(3,25,12,235), RAYLIBColor(173,216,230,255), RAYLIBColor(173,216,230,70))

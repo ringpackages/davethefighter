@@ -5,11 +5,11 @@ aPackageInfo = [
 	:developer = "",
 	:email = "",
 	:license = "MIT License",
-	:version = "1.0.3",
+	:version = "1.0.4",
 	:ringversion = "1.25",
 	:versions = 	[
 		[
-			:version = "1.0.3",
+			:version = "1.0.4",
 			:branch = "master"
 		]
 	],
@@ -43,6 +43,7 @@ aPackageInfo = [
 		"samples/UsingAI/UsingClaude/games/davethefighter/shots/daveworld3.png",
 		"samples/UsingAI/UsingClaude/games/davethefighter/shots/daveworld4.png",
 		"samples/UsingAI/UsingClaude/games/davethefighter/sound.ring",
+		"samples/UsingAI/UsingClaude/games/davethefighter/image/menuback.png",
 		"samples/UsingAI/UsingClaude/games/davethefighter/sounds/door.wav",
 		"samples/UsingAI/UsingClaude/games/davethefighter/sounds/enemy_die.wav",
 		"samples/UsingAI/UsingClaude/games/davethefighter/sounds/enemy_shoot.wav",

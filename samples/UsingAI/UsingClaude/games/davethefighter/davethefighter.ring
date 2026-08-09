@@ -1,5 +1,5 @@
 /*
-**  Dave the Fighter - 3D Action Platformer
+**  Prince of Vibe Code (DaveTheFighter) - 3D Action Platformer
 **  ==========================================
 **  Using RingRayLib
 **  Fight your way through 20 dangerous levels!
@@ -9,8 +9,8 @@
 **
 **  Controls:
 **    Arrow Keys / WASD  -  Move left/right
-**    Space / Up / W     -  Jump
-**    F                  -  Shoot (when gun collected)
+**    Up / W             -  Jump
+**    F / Space          -  Shoot (when gun collected)
 **    N / B              -  Next / Previous level
 **    C                  -  Cycle camera
 **    P                  -  Pause
@@ -21,7 +21,7 @@
 **    Blue Gems     =  100 points
 **    Red Rubies    =  250 points
 **    Gold Ring     =  500 points
-**    Gun           -  Shoot enemies! (press F)
+**    Gun           -  Shoot enemies! (press F or Space)
 **    Key           -  Opens locked door
 **    Trophy        -  Complete the level!
 **
@@ -83,15 +83,19 @@ monIdx = GetCurrentMonitor()
 monW = GetMonitorWidth(monIdx)
 monH = GetMonitorHeight(monIdx)
 
-InitWindow(monW, monH, "Dave the Fighter")
+InitWindow(monW, monH, "Prince of Vibe Code (DaveTheFighter)")
 SetTargetFPS(60)
-ToggleFullscreen()
+SetExitKey(0)   // disable ESC as a quit key; we handle it manually
+togglefullscreen()
 BeginDrawing()
 ClearBackground(RAYLIBColor(0, 0, 0, 255))
 EndDrawing()
  
 SCREEN_W = GetScreenWidth()
 SCREEN_H = GetScreenHeight()
+
+// Menu background (must load after window init - OpenGL context required)
+dave_menuBackTex = LoadTexture("image/menuback.png")
 
 dave_initAudio()
 dave_loadSounds()
@@ -107,7 +111,7 @@ cam = Camera3D(
 
 dave_loadLevel(level)
 
-while !WindowShouldClose()
+while !WindowShouldClose() and !quitGame
     dt = GetFrameTime()
     if dt > 0.05 dt = 0.05 ok
     animTime += dt
@@ -119,20 +123,24 @@ while !WindowShouldClose()
 
     BeginDrawing()
         ClearBackground(RAYLIBColor(5, 5, 15, 255))
-        dave_updateCamera()
-        BeginMode3D(cam)
-            dave_drawLevel3D()
-            dave_drawMovers3D()
-            dave_drawIcicles3D()
-            dave_drawCollectibles3D()
-            dave_drawEnemies3D()
-            dave_drawPlayer3D()
-            dave_drawBullets3D()
-            dave_drawParticles3D()
-        EndMode3D()
+        if gameState != ST_MENU
+            dave_updateCamera()
+            BeginMode3D(cam)
+                dave_drawLevel3D()
+                dave_drawMovers3D()
+                dave_drawIcicles3D()
+                dave_drawCollectibles3D()
+                dave_drawEnemies3D()
+                dave_drawPlayer3D()
+                dave_drawBullets3D()
+                dave_drawParticles3D()
+            EndMode3D()
+            dave_drawBackgroundStars()
+        ok
         dave_drawHUD()
     EndDrawing()
 end
 
 dave_cleanupAudio()
+UnloadTexture(dave_menuBackTex)
 CloseWindow()
